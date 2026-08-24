@@ -26,9 +26,6 @@ https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic
    - bit 단위 ECC와 symbol 단위 ECC의 차이
    - 8-bit symbol과 Chipkill을 이해하기 위해 봄
 
-5. [RS Multi-Symbol Correction](05_rs_multi_symbol_optional.md)
-   - 현재 reproduction을 이해하는 데 꼭 필요하지는 않아서 참고용으로만 남김
-
 처음에는 Hsiao의 `(72,64)`와 RS의 `8 data symbols + 2 parity symbols` 같은 설명을 비슷하게 생각했는데, 공부하면서 둘은 보는 단위부터 다르다는 것을 정리했다. Hsiao는 bit-level SEC-DED이고, RS는 여러 bit를 하나의 symbol로 묶어서 다룬다.
 
 ## 출처
