@@ -19,6 +19,28 @@ The main question explored in this reproduction is:
 
 > How does the effectiveness of an ECC architecture change depending on the type and granularity of memory faults?
 
+## ECC Prerequisites
+
+Before reproducing the Unity ECC experiments, I reviewed the ECC mechanisms needed to understand the simulator and its correction policies.
+
+A curated Unity-ECC-focused study path is included in:
+
+[`prerequisites/`](prerequisites/README.md)
+
+It is based on selected exercises from the public ECC-exercise repository:
+
+https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic
+
+The selected path covers:
+
+1. Hamming SEC and syndrome/H-matrix decoding
+2. Hsiao SEC-DED and hardware-friendly parity-check design
+3. H/G matrix transformation and systematic encoding
+4. GF(256) arithmetic and Reed-Solomon single-symbol correction
+5. optional multi-symbol RS decoding for broader context
+
+These exercises provide the conceptual path from bit-level syndrome decoding to symbol-level Chipkill-style protection used when interpreting the Unity ECC experiments.
+
 ## Experimental Setup
 
 The original Unity ECC simulator was used with the following configurations.
@@ -130,6 +152,7 @@ My contribution in this repository is the reproduction and analysis of the publi
 
 Specifically, I:
 
+- reviewed the prerequisite ECC mechanisms needed to understand Unity ECC,
 - built and executed the public Unity ECC simulator,
 - configured 100,000-run Monte Carlo experiments,
 - reproduced DBE+DBE and CHIPKILL+SE fault scenarios,
@@ -142,7 +165,10 @@ Specifically, I:
 
 The Unity ECC simulator and ECC implementations were developed by the original authors.
 
-Original repository:  
+Original Unity ECC repository:  
 https://github.com/scalable-arch/SC_23-Unity-ECC
 
-This repository contains my experimental reproduction, result organization, and analysis based on that public implementation.
+The prerequisite study path references public exercises from:  
+https://github.com/scalable-arch/ECC-exercise
+
+This repository contains my experimental reproduction, result organization, curated prerequisite study path, and analysis based on those public implementations and exercises.
