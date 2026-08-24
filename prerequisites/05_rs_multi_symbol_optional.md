@@ -1,37 +1,12 @@
-# 5. Optional: Reed-Solomon Multi-Symbol Correction
+# RS Multi-Symbol Correction (참고)
 
-Source exercise:
+원본 실습:
 https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic/08_RS_code_Multi_Symbol_Correction_Berlekamp_Massey
 
-## Why this is optional
+이 부분은 현재 Unity ECC reproduction을 진행하면서 직접 필요한 수준까지는 아니어서 참고용으로만 남겼다.
 
-The reproduced Unity ECC scenarios in this repository can be understood without implementing a full multi-symbol RS decoder. However, this exercise is useful for seeing how correction capability scales beyond SSC and why stronger symbol-level correction requires additional redundancy and more complex decoding.
+Single-Symbol Correction보다 더 많은 symbol error를 고치려면 redundancy도 더 필요하고 decoding도 복잡해진다는 정도를 보기 위해 확인했다.
 
-The source exercise implements a shortened [20,16] Reed-Solomon code over GF(256) and uses the Berlekamp-Massey algorithm for multi-symbol correction.
+원본 실습은 GF(256) 기반 shortened RS code에서 여러 symbol error를 correction하고, Berlekamp-Massey algorithm을 사용한다.
 
-## Practice
-
-Trace the following decoder stages:
-
-1. syndrome calculation,
-2. error-locator polynomial construction,
-3. Berlekamp-Massey update process,
-4. error-location search,
-5. correction and result classification.
-
-Build and run the source exercise as instructed there.
-
-## Connection to Unity ECC
-
-This gives context for the trade-off behind stronger rank-level ECC:
-
-- greater correction capability,
-- more redundancy,
-- more complex decoding,
-- and potentially different latency/implementation costs.
-
-Unity ECC's contribution is not simply "use the strongest possible code." It coordinates protection mechanisms and correction policies around the expected fault patterns and redundancy constraints.
-
-## Checkpoint
-
-You should be able to explain why correcting two symbol errors is qualitatively more complex than correcting one symbol error and why stronger correction capability is not free.
+지금 정리한 Unity ECC 실험에서는 이 알고리즘 자체를 구현하거나 수정하지 않았다. 다만 ECC correction capability를 강하게 만들수록 parity/redundancy와 decoding 복잡도가 같이 늘어난다는 맥락을 이해하는 데 참고했다.
