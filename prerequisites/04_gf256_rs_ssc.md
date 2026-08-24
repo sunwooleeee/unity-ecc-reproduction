@@ -1,66 +1,17 @@
-# 4. GF(256) and Reed-Solomon Single-Symbol Correction
+# GF(256) / RS Single-Symbol Correction
 
-Source exercises:
+원본 실습:
 - https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic/06_Finite_Field
 - https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic/07_RS_code_Single_Symbol_Correction
 
-## Why this is needed
+Hsiao까지는 bit 단위 ECC로 이해했는데, Chipkill과 RS code를 보면서 symbol이라는 단위가 새로 나와서 이 부분을 따로 봤다.
 
-Unity ECC discusses rank-level protection for chip-scale faults. That requires moving from bit-level ECC intuition to symbol-level ECC intuition.
+내가 정리한 핵심은 `1 symbol = 1 bit`가 아니라는 점이다. 이 실습의 RS code는 GF(256)을 사용하므로 한 symbol이 8 bit다.
 
-The source RS exercise uses a [10,8] Reed-Solomon code over GF(256) and injects one 8-bit symbol error. Its configuration is explicitly connected to DDR5 Chipkill-style protection in the source exercise.
+그래서 bit error와 symbol error는 다르게 봐야 한다. 예를 들어 한 chip에서 여러 bit가 망가져도 ECC 구조에 따라서는 하나의 symbol error로 볼 수 있다.
 
-## Practice A: finite-field arithmetic
+Finite Field 실습은 RS code에서 쓰는 GF 연산이 어떤 식으로 돌아가는지 보기 위한 단계였고, 그 다음 RS Single-Symbol Correction 실습에서는 8-bit symbol 하나가 잘못된 경우를 correction한다.
 
-Before RS decoding, complete the finite-field exercise and understand arithmetic in GF(2^m).
+RS 실습의 구조는 `[10,8]`이고, 8개의 data symbol과 2개의 parity symbol을 사용하는 식이다. 예전에 이 구조를 Hsiao `(72,64)`와 비슷하게 생각했는데, 실제로는 Hsiao는 bit-level SEC-DED이고 RS는 symbol-level code라서 출발점이 다르다.
 
-Implement or inspect:
-
-- addition,
-- subtraction,
-- multiplication,
-- division,
-- representation using a primitive polynomial.
-
-Run:
-
-```bash
-python main.py
-```
-
-The important conceptual shift is that one RS symbol is not one bit. In GF(256), one symbol represents 8 bits.
-
-## Practice B: single-symbol correction
-
-Open the original RS SSC exercise and trace:
-
-1. codeword initialization,
-2. one-symbol error injection,
-3. syndrome generation,
-4. error-symbol-location identification,
-5. correction,
-6. NE / CE / DUE classification.
-
-Build and run:
-
-```bash
-g++ RS_code.cpp
-./a.out
-```
-
-The source exercise expects all injected one-symbol errors to be corrected.
-
-## Connection to Unity ECC
-
-This exercise provides the most direct prerequisite for understanding why a Chipkill-style ECC reasons about **symbols/chips**, while Hamming and Hsiao primarily build intuition at the **bit** level.
-
-It also helps interpret why a fault affecting one entire chip can still be treated as one symbol-level fault under an appropriate organization, while an additional fault in another chip may exceed the assumed correction model.
-
-## Checkpoint
-
-You should be able to explain:
-
-- why GF(256) corresponds naturally to 8-bit symbols,
-- the difference between a bit error and a symbol error,
-- what SSC means,
-- and why rank-level Chipkill behavior cannot be inferred only from bit-level SEC-DED capability.
+Unity ECC를 볼 때 이 차이를 알고 나서야 Chipkill이 왜 chip/symbol 단위 fault를 다룬다고 설명되는지 조금 더 명확해졌다.
