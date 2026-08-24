@@ -13,7 +13,7 @@ The goal of this work was to understand how different ECC organizations behave u
 
 While studying read disturbance and memory reliability, I became interested in how physical memory faults are detected and corrected by ECC mechanisms.
 
-After reading the Unity ECC work, I studied basic ECC mechanisms such as Hamming and Hsiao codes and then used the public Unity ECC simulator to reproduce selected fault scenarios.
+During reading the Unity ECC work, I studied basic ECC mechanisms such as Hamming and Hsiao codes and then used the public Unity ECC simulator to reproduce selected fault scenarios.
 
 The main question explored in this reproduction is:
 
