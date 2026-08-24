@@ -1,54 +1,23 @@
-# 2. Hsiao SEC-DED: Hardware-Friendly Parity-Check Design
+# Hsiao SEC-DED
 
-Source exercise:
+원본 실습:
 https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic/02_72_64_Hsiao_code
 
-## Why this is needed
+Hamming을 본 다음 Unity ECC baseline에 나오는 Hsiao On-Die ECC를 이해하려고 본 실습이다.
 
-The baseline configuration in the Unity ECC simulator uses Hsiao SEC-DED as On-Die ECC. Understanding Hsiao therefore directly helps interpret the baseline behavior in the reproduced fault scenarios.
+Hsiao도 H-matrix와 syndrome을 이용한다는 점에서는 Hamming과 비슷하게 이해했다. 차이는 `(72,64)` 구조에서 single-bit error를 correction하면서 double-bit error는 detect하도록 만든 SEC-DED code라는 점이다.
 
-The original exercise asks you to construct a (72,64) Hsiao SEC-DED H-matrix and verify both single-bit correction and double-bit detection.
+내가 처음에 헷갈렸던 부분은 Hsiao를 symbol 단위 ECC처럼 생각했던 것이다. 하지만 Hsiao `(72,64)`는 64 data bit + 8 redundancy bit로 보는 bit-level code이고, 뒤에서 나오는 RS code처럼 8-bit symbol 여러 개를 묶어서 보는 방식과는 다르다.
 
-## What to understand
+이 실습에서는 `H_Matrix.txt`를 구성하고 다음 동작을 확인한다.
 
-Hsiao codes are designed as odd-weight-column SEC-DED codes. Compared with a straightforward extended-Hamming-style construction, the H-matrix is chosen to reduce the XOR-tree depth and hardware cost.
+- single-bit error -> correction
+- double-bit error -> detection
 
-The important properties to check are:
-
-- every column is non-zero,
-- every column is unique,
-- columns have odd weight,
-- single-bit errors produce a syndrome that identifies one column,
-- double-bit errors remain detectable rather than being silently accepted.
-
-## Practice
-
-1. Open the original Hsiao exercise.
-2. Construct `H_Matrix.txt` yourself.
-3. Check the column weights and uniqueness.
-4. Run:
+실행:
 
 ```bash
 python Hsiao_SEC_DED.py
 ```
 
-5. Confirm the expected behavior:
-
-```text
-CE_cnt : 1000
-DUE_cnt: 1000
-UCE_cnt: 0
-```
-
-## Connection to Unity ECC
-
-In the reproduced `CHIPKILL + SE` scenario, the baseline includes a Hsiao On-Die ECC stage before rank-level Chipkill. This layered organization is why the baseline can behave very differently from Unity configurations that disable the separate On-Die ECC stage.
-
-## Checkpoint
-
-You should be able to explain:
-
-- how Hsiao extends the single-bit syndrome idea,
-- why odd-weight columns are useful for SEC-DED,
-- why Hsiao is considered hardware-friendly,
-- and why the presence or absence of an On-Die ECC layer changes the fault pattern seen by rank-level ECC.
+Unity ECC reproduction에서는 baseline에 Hsiao On-Die ECC가 먼저 들어가기 때문에, 뒤의 `CHIPKILL + SE` 결과를 이해할 때 이 부분이 중요했다.
