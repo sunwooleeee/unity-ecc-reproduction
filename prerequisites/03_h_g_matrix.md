@@ -1,48 +1,20 @@
-# 3. H-Matrix to G-Matrix and Systematic Encoding
+# H-matrix / G-matrix
 
-Source exercises:
+원본 실습:
 - https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic/03_10_6_Systematic_code
 - https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic/04_G_H_Matrix_transformation
 
-## Why this is needed
+Hamming과 Hsiao를 보면서 H-matrix는 이해했는데, encoding과 decoding에서 각각 어떤 matrix가 쓰이는지 구분하려고 본 부분이다.
 
-Unity ECC is easier to understand if the roles of the parity-check matrix `H` and generator matrix `G` are clearly separated.
+내가 정리한 것은 단순하다.
 
-`G` defines how redundancy is generated during encoding, while `H` defines the parity constraints checked during decoding.
+- G-matrix: data에 redundancy를 붙여 codeword를 만드는 쪽
+- H-matrix: 받은 codeword가 parity 조건을 만족하는지 보고 syndrome을 만드는 쪽
 
-## Practice A: systematic code
+즉 encoding과 decoding에서 보는 역할이 다르다.
 
-Use the original `(10,6)` systematic-code exercise to identify the data portion and parity portion of a codeword.
+Systematic code는 data bit가 codeword 안에 그대로 보이고 parity bit가 따로 붙는 형태라서 구조를 따라가기 쉬웠다.
 
-Focus on:
+또 H-matrix에서 G-matrix를 만드는 과정은 Gaussian elimination으로 정리되어 있어서, 두 matrix가 서로 독립적인 것이 아니라 같은 code를 다른 관점에서 표현한다는 점을 이해하는 데 도움이 됐다.
 
-- how information bits remain directly visible in a systematic codeword,
-- how redundancy is generated,
-- how the decoder uses parity constraints rather than comparing against the original data.
-
-Run the exercise as described in the source repository and inspect both `encode` and `decode` paths.
-
-## Practice B: H to G transformation
-
-Use the matrix-transformation exercise and convert an H-matrix into the corresponding G-matrix.
-
-Run:
-
-```bash
-python Matrix_transformation.py
-```
-
-Trace the Gaussian-elimination steps rather than treating the transformation as a black box.
-
-## Connection to Unity ECC
-
-This exercise helps separate two questions that appear repeatedly in Unity ECC:
-
-1. Where and how is redundancy generated?
-2. Which parity constraints are later used to classify or correct a received error pattern?
-
-This distinction is especially useful when reading cross-layer ECC designs where redundancy placement and decoding responsibility are separated across layers.
-
-## Checkpoint
-
-You should be able to explain the difference between `G` and `H`, what "systematic" means, and why a syndrome can be computed without retaining the original dataword.
+Unity ECC를 읽을 때도 redundancy를 어디서 만들고, 실제 correction 판단은 어디에서 하는지를 구분해서 보게 되었다.
