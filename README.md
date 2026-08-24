@@ -1,94 +1,56 @@
-# Unity ECC Error-Scenario Reproduction
+# Unity ECC 실험 재현 정리
 
-## Overview
+## 시작하게 된 이유
 
-This repository contains my reproduction and analysis of selected fault scenarios from the public Unity ECC simulator.
+Read Disturbance를 공부하다가 메모리 오류를 실제로 어떻게 막는지 궁금해져서 ECC까지 내려오게 되었다. Unity ECC 논문을 읽기 시작했는데, 처음에는 Hamming, Hsiao, Chipkill, RS code가 각각 어떤 단위의 오류를 보는지 잘 구분이 되지 않았다.
 
-Original implementation:  
+그래서 논문을 계속 읽기 전에 Hamming과 Hsiao부터 다시 보고, 이후 symbol 단위 ECC와 Chipkill까지 연결해서 공부했다. 그 다음 공개된 Unity ECC simulator를 직접 실행하면서 논문에 나온 error scenario 중 일부를 재현해 보았다.
+
+원본 Unity ECC 구현:
 https://github.com/scalable-arch/SC_23-Unity-ECC
 
-The goal of this work was to understand how different ECC organizations behave under different memory fault patterns by reproducing representative error scenarios and tracing the relevant fault-injection and decoding paths.
+## 논문을 읽으면서 정리한 ECC 기초
 
-## Motivation
+내가 가장 먼저 이해한 것은 H-matrix와 syndrome의 관계였다.
 
-While studying read disturbance and memory reliability, I became interested in how physical memory faults are detected and corrected by ECC mechanisms.
+Hamming code에서 각 bit의 H-matrix column은 그 bit가 어떤 parity 검사에 포함되는지를 나타낸다. 한 bit에 오류가 생기면 syndrome이 그 bit의 column과 같아지기 때문에 오류 위치를 찾을 수 있다. 반대로 서로 다른 bit가 같은 column을 가지면 syndrome만 보고 어느 bit가 틀렸는지 구분할 수 없다.
 
-During reading the Unity ECC work, I studied basic ECC mechanisms such as Hamming and Hsiao codes and then used the public Unity ECC simulator to reproduce selected fault scenarios.
+이 개념을 바탕으로 Hsiao SEC-DED를 보았다. Hsiao 역시 bit 단위 ECC이고, Unity ECC simulator의 baseline에서는 On-Die ECC로 사용된다.
 
-The main question explored in this reproduction is:
+여기서 처음에 내가 헷갈렸던 부분이 하나 있었다. `8 data symbols + 2 parity symbols` 같은 구조를 Hsiao와 같은 것으로 생각했는데, 이것은 RS code처럼 symbol 단위로 보는 ECC의 설명이고 Hsiao의 `(72,64)` bit-level SEC-DED와는 다른 구조였다.
 
-> How does the effectiveness of an ECC architecture change depending on the type and granularity of memory faults?
+관련해서 공부한 실습과 메모는 [`prerequisites/`](prerequisites/README.md)에 따로 정리했다.
 
-## ECC Prerequisites
-
-Before reproducing the Unity ECC experiments, I reviewed the ECC mechanisms needed to understand the simulator and its correction policies.
-
-A curated Unity-ECC-focused study path is included in:
-
-[`prerequisites/`](prerequisites/README.md)
-
-It is based on selected exercises from the public ECC-exercise repository:
-
+원본 실습:
 https://github.com/scalable-arch/ECC-exercise/tree/main/01_Basic
 
-The selected path covers:
+## 실험 설정
 
-1. Hamming SEC and syndrome/H-matrix decoding
-2. Hsiao SEC-DED and hardware-friendly parity-check design
-3. H/G matrix transformation and systematic encoding
-4. GF(256) arithmetic and Reed-Solomon single-symbol correction
-5. optional multi-symbol RS decoding for broader context
-
-These exercises provide the conceptual path from bit-level syndrome decoding to symbol-level Chipkill-style protection used when interpreting the Unity ECC experiments.
-
-## Experimental Setup
-
-The original Unity ECC simulator was used with the following configurations.
-
-### Baseline
-
-- Hsiao SEC-DED On-Die ECC
-- AMD Chipkill Rank-Level ECC
-
-### Unity ECC Conservative
-
-- No On-Die ECC
-- Unity SSC-DEC Rank-Level ECC
-- Conservative correction policy
-
-### Unity ECC Restrained
-
-- No On-Die ECC
-- Unity SSC-DEC Rank-Level ECC
-- Restrained correction policy
-
-### Reproduction Configuration
-
-For faster reproduction:
+공개된 Unity ECC simulator의 decoding algorithm은 수정하지 않고 실행 횟수와 mode만 바꿨다.
 
 - `RUN_NUM`: 1,000,000,000 -> 100,000
-- Conservative mode: `CONSERVATIVE_MODE = 1`
-- Restrained mode: `CONSERVATIVE_MODE = 0`
+- Conservative: `CONSERVATIVE_MODE = 1`
+- Restrained: `CONSERVATIVE_MODE = 0`
 
-No changes were made to the ECC decoding algorithms.
+비교한 구성은 다음 세 가지다.
 
-Each configuration was evaluated using 100,000 Monte Carlo iterations.
+- Baseline: Hsiao SEC-DED On-Die ECC + AMD Chipkill
+- Unity Conservative
+- Unity Restrained
 
-## Fault Scenarios
+## 재현한 error scenario
 
-Two representative fault scenarios were reproduced.
+### DBE + DBE
 
-### 1. DBE + DBE
+서로 다른 두 chip에 double-bit error가 발생하는 경우를 실행했다.
 
-Double-bit errors are injected into two different chips.
+### CHIPKILL + SE
 
-### 2. CHIPKILL + SE
+한 chip에는 chip-wide fault가 발생하고, 다른 chip에는 single-bit error가 추가로 발생하는 경우를 실행했다.
 
-A chip-wide fault is injected into one chip and a single-bit error is injected into another chip.
+## 결과
 
-## Results
-
-| Fault Scenario | Configuration | CE | DUE | SDC |
+| Error scenario | Configuration | CE | DUE | SDC |
 |---|---|---:|---:|---:|
 | DBE + DBE | Baseline | 8.862% | 89.763% | 1.375% |
 | DBE + DBE | Unity Conservative | 12.243% | 87.658% | 0.099% |
@@ -97,78 +59,45 @@ A chip-wide fault is injected into one chip and a single-bit error is injected i
 | CHIPKILL + SE | Unity Conservative | 0.000% | 93.531% | 6.469% |
 | CHIPKILL + SE | Unity Restrained | 3.512% | 89.974% | 6.514% |
 
-The raw simulator outputs are available in:
+전체 raw output은 `results/raw/`, 정리한 값은 `results/summary.csv`에 저장했다.
 
-`results/raw/`
-
-A machine-readable summary is available in:
-
-`results/summary.csv`
-
-## Analysis
+## 결과를 보고 이해한 부분
 
 ### DBE + DBE
 
-For the DBE+DBE scenario, the baseline configuration corrects only a small fraction of the injected faults.
+Baseline에서는 대부분 DUE가 발생했고 CE는 약 8.9%였다. 반면 Unity Restrained에서는 CE가 약 98.7%까지 올라갔다.
 
-Unity ECC reduces the SDC rate, while the restrained policy dramatically increases the CE rate.
+코드를 따라가 보니 Unity의 SSC-DEC 쪽에서는 syndrome을 이용해서 두 chip에 있는 double error를 correction하는 경로가 있었다. Conservative mode에서는 여러 chip을 correction한 경우를 다시 DUE로 판단하는 조건이 있기 때문에 Restrained보다 CE가 낮게 나왔다.
 
-The Unity SSC-DEC decoder contains a syndrome table for double-error correction. When a syndrome matches an entry in this table, two erroneous bits located in different chips can be corrected.
-
-In conservative mode, corrections involving multiple chip positions can later be classified as DUE.
-
-Restrained mode disables this additional conservative restriction, allowing substantially more successful corrections to be classified as CE.
+또 하나 눈에 띈 것은 SDC였다. Baseline의 SDC는 1.375%였는데 Unity에서는 약 0.1% 수준으로 줄었다.
 
 ### CHIPKILL + SE
 
-The behavior is reversed for the CHIPKILL+SE scenario.
+이 경우에는 결과가 반대로 나왔다.
 
-The baseline configuration achieves 100% CE in this experiment.
+Baseline은 이번 simulator 설정에서 100% CE였고, Unity Conservative/Restrained는 대부분 DUE가 나왔다.
 
-With the baseline architecture, Hsiao On-Die ECC first corrects the single-bit error. The Rank-Level Chipkill mechanism can then handle the remaining chip-wide fault.
+내가 이해한 이유는 ECC가 배치된 순서의 차이다. Baseline에는 Hsiao On-Die ECC가 먼저 있기 때문에 single-bit error를 먼저 처리한 뒤 rank-level Chipkill이 chip fault를 처리할 수 있다. 반면 이번 Unity 설정은 별도의 On-Die ECC를 사용하지 않기 때문에 chip-wide fault와 추가 single-bit error가 함께 rank-level ECC로 들어간다.
 
-Unity ECC does not use a separate On-Die ECC stage. Therefore, the chip-wide fault and the additional single-bit error reach the Rank-Level ECC together, frequently exceeding the correction capability of the SSC-DEC configuration.
+이 두 실험을 비교하면서, 단순히 "더 강한 ECC가 항상 더 좋다"고 보기 어렵다는 점을 이해했다. 어떤 fault가 발생하는지, bit 단위인지 chip/symbol 단위인지, 그리고 ECC가 어느 계층에 배치되어 있는지가 같이 중요했다.
 
-## Key Observation
+## 내가 한 작업
 
-The results show that ECC effectiveness depends strongly on the fault pattern.
+- Unity ECC 논문을 읽으면서 필요한 ECC 기초를 정리
+- Hamming/Hsiao의 H-matrix와 syndrome 동작 확인
+- 공개 Unity ECC simulator build 및 실행
+- DBE+DBE, CHIPKILL+SE scenario 재현
+- Baseline / Conservative / Restrained 결과 비교
+- CE / DUE / SDC raw result 정리
+- fault injection과 decoder 관련 코드 경로 확인
+- 두 scenario에서 결과가 다르게 나오는 이유 정리
 
-Unity ECC Restrained performs substantially better for the DBE+DBE scenario, while the conventional Hsiao On-Die ECC + Chipkill organization performs better for CHIPKILL+SE.
+ECC algorithm 자체를 새로 구현하거나 수정한 것은 아니며, 이 저장소는 공개 구현을 이용한 학습, 실험 재현 및 결과 분석을 정리한 것이다.
 
-This suggests that reliability cannot be evaluated only by the nominal correction strength of an ECC code.
+## 출처
 
-The interaction between:
-
-- fault granularity,
-- fault combinations,
-- ECC correction capability,
-- and the organization of ECC across memory-system layers
-
-is an important design consideration.
-
-## My Reproduction Work
-
-My contribution in this repository is the reproduction and analysis of the public Unity ECC implementation.
-
-Specifically, I:
-
-- reviewed the prerequisite ECC mechanisms needed to understand Unity ECC,
-- built and executed the public Unity ECC simulator,
-- configured 100,000-run Monte Carlo experiments,
-- reproduced DBE+DBE and CHIPKILL+SE fault scenarios,
-- compared Baseline, Unity Conservative, and Unity Restrained configurations,
-- collected and organized CE, DUE, and SDC results,
-- traced the relevant fault-injection and decoder paths,
-- and analyzed why the configurations behave differently across fault patterns.
-
-## Attribution
-
-The Unity ECC simulator and ECC implementations were developed by the original authors.
-
-Original Unity ECC repository:  
+Unity ECC simulator:
 https://github.com/scalable-arch/SC_23-Unity-ECC
 
-The prerequisite study path references public exercises from:  
+ECC 기초 실습:
 https://github.com/scalable-arch/ECC-exercise
-
-This repository contains my experimental reproduction, result organization, curated prerequisite study path, and analysis based on those public implementations and exercises.
